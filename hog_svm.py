@@ -139,7 +139,7 @@ def train_and_predict(anchor_box, training_for):
 	for new in new_ar:
 		print(svc.predict([new]))
 
-def train_and_predict_multiclass(anchor_box, suffix): # classes to train
+def train_and_predict_multiclass(anchor_box, suffix, class_no): # classes to train
 	# classes = anchor_box[anchor_box]
 
 	X_data = []
@@ -158,7 +158,7 @@ def train_and_predict_multiclass(anchor_box, suffix): # classes to train
 	print(svc.fit(X_data, Y_data))
 
 	# --------------------------------------------------
-	X_test, X_throw_away = construct_dataset(0, 60, '43')
+	X_test, X_throw_away = construct_dataset(0, 30, class_no)
 	print(X_test[0].shape)
 	print(X_test[0][1000])
 	print(X_test[0][100])
@@ -172,9 +172,18 @@ def train_and_predict_multiclass(anchor_box, suffix): # classes to train
 	print(X_test[29][1340])
 	print(X_test[29][14])
 
+	preds = []
+	gts = []
+
 	for new in X_test:
-		print(svc.predict([new]))
+		print(int(svc.predict([new])[0]))
+		preds.append(int(svc.predict([new])[0]))
+		gts.append(int(class_no))
+		# gts.append(class_no)
+		print(class_no)
 	# --------------------------------------------------
+
+	print(classification_report(preds, gts))
 
 def save_train_data(class_name, X, Y, suffix):
 	np.save('data/'+str(class_name)+'/'+str(class_name)+'_X'+suffix, X)
@@ -282,11 +291,11 @@ if __name__ == "__main__":
 	# print(X[199])
 	# save_train_data('tennis racket', X, Y, '200')
 
-	train_and_predict_multiclass(['brocoli', 'tennis racket', 'hotdog', 'cup'], '200')
+	# train_and_predict_multiclass(['brocoli', 'tennis racket', 'hotdog', 'cup'], '200')
 	# train_and_predict_multiclass(['apple', 'carrot', 'tvmonitor', 'sofa'], '200')
 	# train_and_predict_multiclass(['bicycle', 'orange', 'car', 'cake'], '200')
 	# train_and_predict_multiclass(['aeroplane', 'person', 'motorbike', 'umbrella'], '200')
-	# train_and_predict_multiclass(['tennis racket', 'sofa', 'bus', 'train'], '200')
+	train_and_predict_multiclass(['tennis racket', 'sofa', 'bus', 'train'], '200', '7')
 	# ---------------------------------------------------------------------------
 
 
