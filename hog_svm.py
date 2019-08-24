@@ -26,8 +26,8 @@ def construct_dataset(lower, upper, train_class):
 	X_train_count = 0
 
 	# with open('./data/'+str(lower)+str(upper)+".txt") as file:
-	fname = "./data/images_annos_0_4999_subset.txt"
-	# fname = "./data/images_annos_0_14999.txt"
+	# fname = "./data/images_annos_0_4999_subset.txt"
+	fname = "./data/images_annos_0_14999.txt"
 	print(os.path.exists(fname))
 
 	# with open("./data/images_annos_0_9999.txt") as file:
@@ -139,7 +139,7 @@ def train_and_predict(anchor_box, training_for):
 	for new in new_ar:
 		print(svc.predict([new]))
 
-def train_and_predict_multiclass(anchor_box, suffix, class_no): # classes to train
+def train_and_predict_multiclass(anchor_box, suffix, class_no, hog_windows=None): # classes to train
 	# classes = anchor_box[anchor_box]
 
 	X_data = []
@@ -157,31 +157,40 @@ def train_and_predict_multiclass(anchor_box, suffix, class_no): # classes to tra
 	svc = svm.LinearSVC()
 	print(svc.fit(X_data, Y_data))
 
-	# --------------------------------------------------
-	X_test, X_throw_away = construct_dataset(0, 30, class_no)
-	print(X_test[0].shape)
-	print(X_test[0][1000])
-	print(X_test[0][100])
-	print(X_test[0][10530])
-	print(X_test[15].shape)
-	print(X_test[15][1000])
-	print(X_test[15][1043])
-	print(X_test[15][120])
-	print(X_test[29].shape)
-	print(X_test[29][1000])
-	print(X_test[29][1340])
-	print(X_test[29][14])
-
 	preds = []
 	gts = []
 
+	if hog_windows:
+		X_test = []
+		for hog_window in hog_windows:
+			X_test.append(hog_window)
+
+	else:
+		X_test, X_throw_away = construct_dataset(0, 30, class_no)
+		print(X_test[0].shape)
+		print(X_test[0][1000])
+		print(X_test[0][100])
+		print(X_test[0][10530])
+		print(X_test[15].shape)
+		print(X_test[15][1000])
+		print(X_test[15][1043])
+		print(X_test[15][120])
+		print(X_test[29].shape)
+		print(X_test[29][1000])
+		print(X_test[29][1340])
+		print(X_test[29][14])
+
+	i = 1
+
 	for new in X_test:
+		print("\n")
+		print("no. "+str(i))
+		i+=1
 		print(int(svc.predict([new])[0]))
 		preds.append(int(svc.predict([new])[0]))
 		gts.append(int(class_no))
 		# gts.append(class_no)
-		print(class_no)
-	# --------------------------------------------------
+		# print(class_no)
 
 	print(classification_report(preds, gts))
 
@@ -189,102 +198,8 @@ def save_train_data(class_name, X, Y, suffix):
 	np.save('data/'+str(class_name)+'/'+str(class_name)+'_X'+suffix, X)
 	np.save('data/'+str(class_name)+'/'+str(class_name)+'_Y'+suffix, Y)
 
-# def plot_model(svc, X, Y, anchor_box):
-# def plot_model(svc, X, Y):
-# 	# classes = anchor_box[anchor_box]
-# 	# for my_class in classes:
-
-# 	# for i in len(anchor_box):
-
-# 	# for my_class in anchor_box:
-# 	# 	if my_class == 76:
-			
-# 	# 	elif my_class == 40:
-			
-# 	# 	elif my_class == 59:
-			
-# 	# 	else:
-
-# 	color = ['pink' if c == '76' else 'lightgrey' for c in Y]
-# 	plt.scatter(X[:,0], X[:,1], c=color)
-
-# 	w = svc.coef_[0]
-# 	a = -w[0] / w[1]
-# 	xx = np.linspace(-2.5, 2.5)
-# 	yy = a * xx - (svc.intercept_[0]) / w[1]
-
-# 	plt.plot(xx, yy)
-# 	plt.axis("off"), plt.show()
-
-# def sanity_check(X, Y):
-	# --------------------------------
-	# print(X_train[9].shape)
-	# img = mpimg.imread(data[0])
-	# imgplot = plt.imshow(img)
-	# plt.show()
-	# print(Y_train[9])
-	# --------------------------------
-
-# def make_meshgrid(X, Y, h=.02):
-# 	x_minimum = X.min() - 1
-# 	x_maximum = X.max() + 1
-# 	y_minimum = Y.min() - 1
-# 	y_maximum = Y.max() + 1
-# 	xx, yy = np.meshgrid(np.arange(x_minimum, x_maximum, h),
-# 						 np.arange(y_minimum, y_maximum, h))
-
-# 	return xx, yy
-
-# def plot_contours(ax, classifier, xx, yy, **params):
-# 	Z = classifier.predict(np.c_[xx.ravel(), yy.ravel()])
-# 	Z = Z.reshape(xx.shape)
-# 	out = ax.contourf(xx, yy, Z, **params)
-# 	return out
-
 if __name__ == "__main__":
 	# ---------------------------------------------------------------------------
-	# X, Y = construct_dataset(0, 200, "28")
-	# print(X[0])
-	# print(X[99])
-	# print(X[199])
-	# save_train_data('umbrella', X, Y, '200')
-
-	# X, Y = construct_dataset(0, 200, "4")
-	# print(X[0])
-	# print(X[99])
-	# print(X[199])
-	# save_train_data('motorbike', X, Y, '200')
-
-	# X, Y = construct_dataset(0, 200, "1")
-	# print(X[0])
-	# print(X[99])
-	# print(X[199])
-	# save_train_data('person', X, Y, '200')
-
-	# X, Y = construct_dataset(0, 200, "5")
-	# print(X[0])
-	# print(X[99])
-	# print(X[199])
-	# save_train_data('aeroplane', X, Y, '200')
-
-	# X, Y = construct_dataset(0, 200, "7")
-	# print(X[0])
-	# print(X[99])
-	# print(X[199])
-	# save_train_data('train', X, Y, '200')
-
-	# X, Y = construct_dataset(0, 200, "6")
-	# print(X[0])
-	# print(X[99])
-	# print(X[199])
-	# save_train_data('bus', X, Y, '200')
-
-	# X, Y = construct_dataset(0, 200, "63")
-	# print(X[0])
-	# print(X[99])
-	# print(X[199])
-	# save_train_data('sofa', X, Y, '200')
-
 	# X, Y = construct_dataset(0, 200, "43")
 	# print(X[0])
 	# print(X[99])
