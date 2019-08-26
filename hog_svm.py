@@ -8,6 +8,7 @@ import math
 from mlxtend.plotting import plot_decision_regions
 from PIL import Image
 from sklearn.metrics import classification_report,accuracy_score
+import random
 
 # def compose_dataset_file():
 
@@ -28,45 +29,118 @@ def construct_dataset(lower, upper, train_class):
 	# with open('./data/'+str(lower)+str(upper)+".txt") as file:
 	# fname = "./data/images_annos_0_4999_subset.txt"
 	fname = "./data/images_annos_0_14999.txt"
-	print(os.path.exists(fname))
 
 	# with open("./data/images_annos_0_9999.txt") as file:
+
+	x_ar = [] 
+	y_ar = []
+	w_ar = []
+	h_ar = []
+	cls_ar = []
+
+	dim_x = 0
+	dim_y = 0
+
 	with open(fname) as file:
 		line = file.readline()
 		while line and X_train_count < (upper-lower):
-			# print(line)
 			data = line.split()
 			if len(data) == 1:
+				# print("processing filename in textfile")
+				if len(x_ar) != 0:
+					backgrd_amount = len(x_ar)
+					print("backgrd_amount")
+					print(backgrd_amount)
+					
+					for i in range(backgrd_amount):
+						# print("in for finding background boxes")s
+						b_x = random.randint(0, int(dim_x))
+						b_y = random.randint(0, int(dim_y))
+						while not(b_x in x_ar) and not(b_y in y_ar):
+							# print("in wile finding background box's coords and dims")
+
+							b_x = random.randint(0, int(dim_x))
+							b_y = random.randint(0, int(dim_y))
+
+							b_h_index = random.randint(0, len(h_ar) - 1)
+							# print("b_h_index")
+							b_h = h_ar[b_h_index]
+
+							b_w_index = random.randint(0, len(w_ar) - 1)
+							# print("b_w_index")
+							b_w = w_ar[b_w_index]
+
+						backgrds = cv2.imread(filename)
+						backgrds = cv2.cvtColor(backgrds, cv2.COLOR_BGR2RGB)
+
+						backgrd = backgrds[b_y:b_y+b_h, b_x:b_x+b_w]
+						
+						backgrd_img = Image.fromarray(backgrd)
+						# backgrd_img.show()
+
+						backgrd = cv2.cvtColor(backgrd, cv2.COLOR_BGR2GRAY)
+						backgrd = cv2.resize(backgrd, (100, 200))
+						backgrd = np.float32(backgrd)/255
+						# x_objects = cv2.cvtColor(x_object, cv2.COLOR_BGR2GRAY) # temporary
+						backgrd = cv2.Sobel(backgrd, cv2.CV_32F, 0, 1, ksize=1) # temporary
+						backgrd = backgrd.flatten()
+						
+						X_train[X_train_count] = backgrd
+						Y_train[X_train_count] = 0
+						X_train_count += 1
+
 				try:
 					filename = data[0]
 					# x_objects = cv2.imread(data[0]) # image with possible multiple objects.
 				except Exception as e:
 					print(str(e))
+				
+				x_ar = [] 
+				y_ar = []
+				w_ar = []
+				h_ar = []
 			else:
+				# print("processing image anno in textfile")
+
 				x = data[0]
 				x = math.floor(float(x))
+
 				y = data[1]
 				y = math.floor(float(y))
+
 				w = data[2]
 				w = math.floor(float(w))
+				
 				h = data[3]
 				h = math.floor(float(h))
+
 				clas = data[5]
 				clas = int(clas)
 				# print(clas)
 				x_objects = cv2.imread(filename) # image with possible multiple objects.
+
+				dim_x = x_objects.shape[1]
+				dim_y = x_objects.shape[0]
+
 				x_objects = cv2.cvtColor(x_objects, cv2.COLOR_BGR2RGB)
 				if clas == train_class:
+					x_ar.append(x)
+					y_ar.append(y)
+					w_ar.append(w)
+					h_ar.append(h)
+
 					if test_no_dup < 5:
 						img = Image.fromarray(x_objects)
-						img.show()
+						# img.show()
 
 						x_object = x_objects[y:y+h, x:x+w]
 						img = Image.fromarray(x_object)
-						img.show()
+						# img.show()
 						test_no_dup += 1
 
 					x_object = x_objects[y:y+h, x:x+w]
+					img = Image.fromarray(x_object)
+					# img.show()
 
 					# x_object = x_objects[y:y+h, x:x+w, 0:1]
 					x_object = cv2.cvtColor(x_object, cv2.COLOR_BGR2GRAY) # temporary
@@ -200,18 +274,34 @@ def save_train_data(class_name, X, Y, suffix):
 
 if __name__ == "__main__":
 	# ---------------------------------------------------------------------------
-	# X, Y = construct_dataset(0, 200, "43")
-	# print(X[0])
-	# print(X[99])
-	# print(X[199])
-	# save_train_data('tennis racket', X, Y, '200')
+	X, Y = construct_dataset(0, 200, "1")
+	# # print(X[0])
+	# # print(X[99])
+	# # print(X[199])
+	save_train_data('person', X, Y, '200_with_backgrd')
 
-	# train_and_predict_multiclass(['brocoli', 'tennis racket', 'hotdog', 'cup'], '200')
+	# X, Y = construct_dataset(0, 200, "43")
+	# # print(X[0])
+	# # print(X[99])
+	# # print(X[199])
+	# save_train_data('tennis racket', X, Y, '200_with_backgrd')
+
+	# X, Y = construct_dataset(0, 200, "2")
+	# # print(X[0])
+	# # print(X[99])
+	# # print(X[199])
+	# save_train_data('bicycle', X, Y, '200_with_backgrd')
+
+	# train_and_predict_multiclass(['orange', 'tennis racket', 'bicycle', 'apple'], '200')
 	# train_and_predict_multiclass(['apple', 'carrot', 'tvmonitor', 'sofa'], '200')
 	# train_and_predict_multiclass(['bicycle', 'orange', 'car', 'cake'], '200')
 	# train_and_predict_multiclass(['aeroplane', 'person', 'motorbike', 'umbrella'], '200')
-	train_and_predict_multiclass(['tennis racket', 'sofa', 'bus', 'train'], '200', '7')
+	# train_and_predict_multiclass(['tennis racket', 'sofa', 'bus', 'train'], '200', '7')
 	# ---------------------------------------------------------------------------
+
+
+
+
 
 
 

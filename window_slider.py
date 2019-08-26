@@ -64,7 +64,7 @@ def slide_windows(filename, anchor_box, stride=1):
 
 			# img.show()
 			# for i in range(hori_step+vert_step):
-			img.save(str(i)+'.jpg')
+			img.save('to_compare/'+str(i)+'.jpg')
 			i+=1
 
 			# img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # remove 2 channels
@@ -89,11 +89,11 @@ def slide_windows(filename, anchor_box, stride=1):
 	return hog_windows
 
 if __name__ == "__main__":
-	filename = "/home/charlie/Desktop/yolo/yolo-v3/data/coco/cocoapi/coco/images/train2017/train2017/000000000715.jpg"
+	filename = "/home/charlie/Desktop/yolo/yolo-v3/data/coco/cocoapi/coco/images/train2017/train2017/000000323639.jpg"
 	anchor_box = []
 	anchor_box.append(50) # w
 	anchor_box.append(50) # h
 
 	hog_windows = slide_windows(filename, anchor_box, 2)
 
-	train_and_predict_multiclass(['orange', 'tvmonitor', 'tennis racket', 'person'], '200', '7', hog_windows)
+	train_and_predict_multiclass(['orange', 'tennis racket', 'bicycle', 'person'], '200_with_backgrd', '7', hog_windows)
