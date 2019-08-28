@@ -38,10 +38,10 @@ def slide_windows(filename, anchor_box, stride=1):
 	
 	# hori_window_steps = (image_wid // anchor_box[0]) * stride
 	# hori_window_steps = (image_wid // anchor_box[0]) * 2
-	hori_window_steps = (image_wid // anchor_box[0]) * 2
+	hori_window_steps = (image_wid // anchor_box[0])
 	# vert_window_steps = (image_hei // anchor_box[1]) * stride
 	# vert_window_steps = (image_hei // anchor_box[1]) * 2
-	vert_window_steps = (image_hei // anchor_box[1]) * 2
+	vert_window_steps = (image_hei // anchor_box[1])
 
 	poss_objects = cv2.imread(filename)
 	poss_objects = cv2.cvtColor(poss_objects, cv2.COLOR_BGR2RGB)
@@ -52,10 +52,10 @@ def slide_windows(filename, anchor_box, stride=1):
 		for vert_step in range(vert_window_steps):
 			print("y: " + str(int(vert_step * anchor_box[1] * 0.5)) + ":" + str(int(vert_step * anchor_box[1] * 0.5 + anchor_box[1] * 0.5)))
 			print("x: " + str(int(hori_step * anchor_box[0] * 0.5)) + ":" + str(int(hori_step * anchor_box[0] * 0.5 + anchor_box[0] * 0.5)))
-			poss_object = poss_objects[int(vert_step * anchor_box[1] * 0.5): int(vert_step * anchor_box[1] * 0.5 + anchor_box[1]),\
-									   int(hori_step * anchor_box[0] * 0.5): int(hori_step * anchor_box[0] * 0.5 + anchor_box[0])]
-			# poss_object = poss_objects[int(vert_step * anchor_box[1]): int(vert_step * anchor_box[1] + anchor_box[1]),\
-			# 						   int(hori_step * anchor_box[0]): int(hori_step * anchor_box[0] + anchor_box[0])]
+			# poss_object = poss_objects[int(vert_step * anchor_box[1] * 0.5): int(vert_step * anchor_box[1] * 0.5 + anchor_box[1]),\
+									   # int(hori_step * anchor_box[0] * 0.5): int(hori_step * anchor_box[0] * 0.5 + anchor_box[0])]
+			poss_object = poss_objects[int(vert_step * anchor_box[1]): int(vert_step * anchor_box[1] + anchor_box[1]),\
+									   int(hori_step * anchor_box[0]): int(hori_step * anchor_box[0] + anchor_box[0])]
 
 			img = Image.fromarray(poss_object)
 
@@ -75,7 +75,7 @@ def slide_windows(filename, anchor_box, stride=1):
 			print(hog_window.size)
 			hog_window = np.float32(hog_window)/255
 			hog_window = cv2.Sobel(hog_window, cv2.CV_32F, 0, 1, ksize=1) # temporary
-
+# 
 			# img_show = Image.fromarray(hog_window)
 			# img_show.show()
 
@@ -86,7 +86,73 @@ def slide_windows(filename, anchor_box, stride=1):
 
 			hog_windows.append(hog_window)
 
-	return hog_windows
+	return hog_windows, hori_window_steps, vert_window_steps
+
+def draw_bboxes(anchor_box, window_preds, orignal_img, hori_win_amount, vert_win_amount):
+	bbox_coords = []
+	x = 0
+	y = 0
+	bbox = []
+	print(hori_win_amount)
+	print(vert_win_amount)
+	new_win_preds = np.array(window_preds).reshape(hori_win_amount, vert_win_amount)
+	new_win_preds = list(new_win_preds)
+	print(new_win_preds)
+
+	for vert_win in range(vert_win_amount):
+		for hori_win in range(hori_win_amount):
+			# if new_win_preds[vert_win][hori_win] != 0:
+			if new_win_preds[hori_win][vert_win] != 0:
+				bbox.append(hori_win * anchor_box[0]) # x
+				bbox.append(vert_win * anchor_box[1]) # y
+				bbox.append(anchor_box[0]) # w
+				bbox.append(anchor_box[1]) # h
+				# bbox.append(new_win_preds[vert_win][hori_win])
+				bbox.append(new_win_preds[hori_win][vert_win])
+				bbox_coords.append(bbox)
+				bbox = []
+
+	pink = (255,105,180)
+	original = cv2.imread(orignal_img)
+	original = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
+
+	print(bbox_coords)
+	
+	for bbox in bbox_coords:
+		cv2.line(original,(bbox[0],bbox[1]), (bbox[0]+bbox[2], bbox[1]), pink, 1)
+		cv2.line(original,(bbox[0]+bbox[2], bbox[1]), (bbox[0]+bbox[2], bbox[1]+bbox[3]), pink, 1)
+		cv2.line(original,(bbox[0]+bbox[2], bbox[1]+bbox[3]), (bbox[0], bbox[1]+bbox[3]), pink, 1)
+		cv2.line(original,(bbox[0], bbox[1]+bbox[3]), (bbox[0], bbox[1]), pink, 1)
+		font = cv2.FONT_HERSHEY_SIMPLEX
+		cv2.putText(original, str(bbox[4]), (bbox[0],bbox[1]+25), font, 1, pink, 2, cv2.LINE_AA)
+		# points = np.array([[[50, 50], [100, 50], [100, 100], [50, 100]]], np.int32)
+				# points = np.array([[[bbox[0], bbox[1]], \
+				# 		    [bbox[0]+bbox[2], bbox[1]], \
+				# 		    [bbox[0]+bbox[2], bbox[1]+bbox[3]],\
+				# 		    [bbox[0], bbox[3]+bbox[3]]]], np.int32)
+	# points = np.array([[[bbox_coords[2][0], bbox_coords[2][1]], \
+	# 					[bbox_coords[2][0]+bbox_coords[2][2], bbox_coords[2][1]], \
+	# 					[bbox_coords[2][0]+bbox_coords[2][2], bbox_coords[2][1]+bbox_coords[2][3]], \
+	# 					[bbox_coords[2][0], bbox_coords[2][3]+bbox_coords[2][3]]]], np.int32)
+	# # points = np.array([[[0, 0], [0, 0], [0, 0], [0, 0]]], np.int32)
+	# # cv2.polylines(original, [points], True, pink, thickness=1)
+	# points = np.array([[[bbox_coords[4][0], bbox_coords[4][1]], \
+	# 					[bbox_coords[4][0]+bbox_coords[4][2], bbox_coords[4][1]], \
+	# 					[bbox_coords[4][0]+bbox_coords[4][2], bbox_coords[4][1]+bbox_coords[4][3]], \
+	# 					[bbox_coords[4][0], bbox_coords[4][3]+bbox_coords[4][3]]]], np.int32)
+	# cv2.polylines(original, [points], True, pink, thickness=1)
+	# # points = np.array([[[0, 0], [0, 0], [0, 0], [0, 0]]], np.int32)
+	# # cv2.polylines(original, [points], True, pink, thickness=1)
+	# points = np.array([[[bbox_coords[1][0], bbox_coords[1][1]], \
+	# 					[bbox_coords[2][0]+bbox_coords[2][2], bbox_coords[2][1]], \
+	# 					[bbox_coords[2][0]+bbox_coords[2][2], bbox_coords[2][1]+bbox_coords[2][3]], \
+	# 					[bbox_coords[2][0], bbox_coords[2][3]+bbox_coords[2][3]]]], np.int32)
+	# cv2.polylines(original, [points], True, pink, thickness=1)
+	
+	plt.axis("off")
+	plt.imshow(original)
+	plt.show()
+	# cv2.imshow("lekka", original)
 
 if __name__ == "__main__":
 	filename = "/home/charlie/Desktop/yolo/yolo-v3/data/coco/cocoapi/coco/images/train2017/train2017/000000323639.jpg"
@@ -94,6 +160,10 @@ if __name__ == "__main__":
 	anchor_box.append(50) # w
 	anchor_box.append(50) # h
 
-	hog_windows = slide_windows(filename, anchor_box, 2)
+	hog_windows, hori_win_steps, vert_win_steps = slide_windows(filename, anchor_box, 2)
 
-	train_and_predict_multiclass(['orange', 'tennis racket', 'bicycle', 'person'], '200_with_backgrd', '7', hog_windows)
+	preds = train_and_predict_multiclass(['orange', 'tennis racket', 'bicycle', 'person'], '200_with_backgrd', '7', hog_windows)
+
+	print(preds)
+
+	draw_bboxes(anchor_box, preds, filename, hori_win_steps, vert_win_steps)

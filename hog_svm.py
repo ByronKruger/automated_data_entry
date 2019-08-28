@@ -239,6 +239,14 @@ def train_and_predict_multiclass(anchor_box, suffix, class_no, hog_windows=None)
 		for hog_window in hog_windows:
 			X_test.append(hog_window)
 
+		i = 1
+		for new in X_test:
+			print("no. "+str(i)+": "+str(int(svc.predict([new])[0])))
+			i+=1
+			preds.append(int(svc.predict([new])[0]))
+
+		return preds
+
 	else:
 		X_test, X_throw_away = construct_dataset(0, 30, class_no)
 		print(X_test[0].shape)
@@ -254,19 +262,16 @@ def train_and_predict_multiclass(anchor_box, suffix, class_no, hog_windows=None)
 		print(X_test[29][1340])
 		print(X_test[29][14])
 
-	i = 1
+		i = 1
+		for new in X_test:
+			print("no. "+str(i))
+			print("\n")
+			i+=1
+			print(int(svc.predict([new])[0]))
+			preds.append(int(svc.predict([new])[0]))
+			gts.append(int(class_no))
 
-	for new in X_test:
-		print("\n")
-		print("no. "+str(i))
-		i+=1
-		print(int(svc.predict([new])[0]))
-		preds.append(int(svc.predict([new])[0]))
-		gts.append(int(class_no))
-		# gts.append(class_no)
-		# print(class_no)
-
-	print(classification_report(preds, gts))
+		print(classification_report(preds, gts))
 
 def save_train_data(class_name, X, Y, suffix):
 	np.save('data/'+str(class_name)+'/'+str(class_name)+'_X'+suffix, X)
