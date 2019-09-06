@@ -9,7 +9,7 @@ from mlxtend.plotting import plot_decision_regions
 from PIL import Image
 from sklearn.metrics import classification_report,accuracy_score
 import random
-
+os.urandom(55)
 # def compose_dataset_file():
 
 anchor_boxes = {
@@ -18,7 +18,19 @@ anchor_boxes = {
 	'1:1': ['cup', 'oven', 'toilet', 'clock'],
 }
 
-def construct_dataset(lower, upper, train_class):
+switcher = {
+	'carrot':'57',
+	'chair':'62',
+	'cup':'47',
+	'tvmonitor':'72',
+	'surfboard':'42',
+	'hotdog':'58',
+	'tennis racket':'43',
+	'brocoli':'56',
+	'cup':'47',
+}
+
+def construct_dataset(lower, upper, train_class, clss_fn):
 	test_no_dup = 0
 	train_class = int(train_class)
 	print(train_class)
@@ -28,7 +40,9 @@ def construct_dataset(lower, upper, train_class):
 
 	# with open('./data/'+str(lower)+str(upper)+".txt") as file:
 	# fname = "./data/images_annos_0_4999_subset.txt"
-	fname = "./data/images_annos_0_14999.txt"
+	# fname = "./data/images_annos_0_14999.txt"
+	# fname = "./data/images_annos_0_2999_toilet.txt"
+	fname = clss_fn
 
 	# with open("./data/images_annos_0_9999.txt") as file:
 
@@ -37,6 +51,7 @@ def construct_dataset(lower, upper, train_class):
 	w_ar = []
 	h_ar = []
 	cls_ar = []
+	backgrd_amount = 0
 
 	dim_x = 0
 	dim_y = 0
@@ -45,15 +60,25 @@ def construct_dataset(lower, upper, train_class):
 		line = file.readline()
 		while line and X_train_count < (upper-lower):
 			data = line.split()
+
 			if len(data) == 1:
-				# print("processing filename in textfile")
-				if len(x_ar) != 0:
-					backgrd_amount = len(x_ar)
+				# if len(x_ar) != 0:
+				if backgrd_amount != 0:
+					# backgrd_amount = len(x_ar)
 					print("backgrd_amount")
-					print(backgrd_amount)
-					
+					print(backgrd_amount) # sae amount as amount of desired class
+
+					# boxes_o_any = []
+					# four_attrs = zip(x_ar, y_ar, w_ar, h_ar)
+					# for attr in four_attrs:
+
+					# for i in range(backgrd_amount):
+					# 	# reconstruct all boxes of all class in current image
+					# 	b_x = random.randint(0, int(dim_x))
+					# 	b_y = random.randint(0, int(dim_y))
+						
 					for i in range(backgrd_amount):
-						# print("in for finding background boxes")s
+						# print("in for finding background boxes")
 						b_x = random.randint(0, int(dim_x))
 						b_y = random.randint(0, int(dim_y))
 						while not(b_x in x_ar) and not(b_y in y_ar):
@@ -91,7 +116,6 @@ def construct_dataset(lower, upper, train_class):
 
 				try:
 					filename = data[0]
-					# x_objects = cv2.imread(data[0]) # image with possible multiple objects.
 				except Exception as e:
 					print(str(e))
 				
@@ -99,9 +123,9 @@ def construct_dataset(lower, upper, train_class):
 				y_ar = []
 				w_ar = []
 				h_ar = []
-			else:
-				# print("processing image anno in textfile")
 
+				backgrd_amount = 0
+			else:
 				x = data[0]
 				x = math.floor(float(x))
 
@@ -116,26 +140,31 @@ def construct_dataset(lower, upper, train_class):
 
 				clas = data[5]
 				clas = int(clas)
-				# print(clas)
 				x_objects = cv2.imread(filename) # image with possible multiple objects.
 
 				dim_x = x_objects.shape[1]
 				dim_y = x_objects.shape[0]
 
 				x_objects = cv2.cvtColor(x_objects, cv2.COLOR_BGR2RGB)
+				
+				x_ar.append(x)
+				y_ar.append(y)
+				w_ar.append(w)
+				h_ar.append(h)				
+
 				if clas == train_class:
-					x_ar.append(x)
-					y_ar.append(y)
-					w_ar.append(w)
-					h_ar.append(h)
+					backgrd_amount += 1
+					# x_ar.append(x)
+					# y_ar.append(y)
+					# w_ar.append(w)
+					# h_ar.append(h)
 
 					if test_no_dup < 5:
 						img = Image.fromarray(x_objects)
-						# img.show()
-
+						# img.show() #
 						x_object = x_objects[y:y+h, x:x+w]
 						img = Image.fromarray(x_object)
-						# img.show()
+						# img.show() #
 						test_no_dup += 1
 
 					x_object = x_objects[y:y+h, x:x+w]
@@ -153,6 +182,204 @@ def construct_dataset(lower, upper, train_class):
 					X_train[X_train_count] = x_object
 					Y_train[X_train_count] = train_class
 					X_train_count += 1
+
+			line = file.readline()
+	return X_train, Y_train
+
+def construct_dataset_no_back(lower, upper, train_class, clss_fn):
+	test_no_dup = 0
+	train_class = int(train_class)
+	print(train_class)
+	X_train = np.zeros((upper-lower, 20000))  # make it dynamic size, make it 3 channels if found to increase accuracy else this will be faster
+	Y_train = np.zeros((upper-lower))
+	X_train_count = 0
+
+	# with open('./data/'+str(lower)+str(upper)+".txt") as file:
+	# fname = "./data/images_annos_0_4999_subset.txt"
+	# fname = "./data/images_annos_0_2999_chair.txt"
+	fname = clss_fn
+
+	# with open("./data/images_annos_0_9999.txt") as file:
+
+	with open(fname) as file:
+		line = file.readline()
+		while line and X_train_count < (upper-lower):
+			data = line.split()
+
+			if len(data) == 1:
+				filename = data[0]
+				print("__________________________")
+				print(filename)
+				print("__________________________")
+				
+			else:
+				x = data[0]
+				x = math.floor(float(x))
+
+				y = data[1]
+				y = math.floor(float(y))
+
+				w = data[2]
+				w = math.floor(float(w))
+				
+				h = data[3]
+				h = math.floor(float(h))
+
+				clas = data[5]
+				clas = int(clas)
+				x_objects = cv2.imread(filename) # image with possible multiple objects.
+				x_objects = cv2.cvtColor(x_objects, cv2.COLOR_BGR2RGB)
+				
+				if clas == train_class:
+					if test_no_dup < 51:
+						img = Image.fromarray(x_objects)
+						# img.show()
+						x_object = x_objects[y:y+h, x:x+w]
+						img = Image.fromarray(x_object)
+						# img.show()
+						test_no_dup += 1
+
+					x_object = x_objects[y:y+h, x:x+w]
+
+					x_object = cv2.cvtColor(x_object, cv2.COLOR_BGR2GRAY) # temporary
+					x_object = cv2.resize(x_object, (100, 200))
+					x_object = np.float32(x_object)/255
+					x_object = cv2.Sobel(x_object, cv2.CV_32F, 0, 1, ksize=1) # temporary
+					x_object = x_object.flatten()
+					
+					X_train[X_train_count] = x_object
+					Y_train[X_train_count] = train_class
+					X_train_count += 1
+
+			line = file.readline()
+	print("no_back, len(X_train):"+str(len(X_train)))
+	return X_train, Y_train
+
+def is_box_in_box(x_ar, y_ar, w_ar, h_ar, x, y, w, h):
+	c = 0
+	for xx,yy,ww,hh in zip(x_ar,y_ar,w_ar,h_ar):
+		# print(c)
+		if (x >= xx) and (x <= xx+ww) and (y >= yy) and (y <= yy+hh):
+			c+=1
+			return True
+
+		if (x+w >= xx) and (x+w <= xx+ww) and (y+h >= ww) and (y+h <= yy+hh):
+			c+=1
+			return True
+			
+		return False
+
+def construct_dataset_bckgrd(lower, upper, bb_w, bb_h, clss_fn):
+	sanity_check = 0
+	sanity_check1 = 0
+
+	X_train = np.zeros((upper-lower, 20000))  # make it dynamic size, make it 3 channels if found to increase accuracy else this will be faster
+	Y_train = np.zeros((upper-lower))
+
+	X_train_count = 0
+
+	# fname = "./data/images_annos_0_14999.txt"
+	fname = clss_fn
+
+	x_ar = [] 
+	y_ar = []
+	w_ar = []
+	h_ar = []		
+	x_dim = 0			
+	y_dim = 0		
+	filename = ''
+	c = 0
+
+	with open(fname) as file:
+		line = file.readline()
+		while line and X_train_count < (upper-lower):
+			data = line.split()
+
+			if len(data) == 1:
+				if len(x_ar) > 0 and len(y_ar) > 0 and len(w_ar) > 0 and len(h_ar) > 0:
+					# x = 0
+					# y = 0
+					w = bb_w
+					h = bb_h
+					# xywhs = zip(x_ar, y_ar, w_ar, h_ar)
+					# for xywh in xywhs: # just ot match the same amount of objects with the amount of background samples
+					# while x in x_ar or y in y_ar: # just to make sure we don't cut backgrounds as objects (still not robust enuf)
+					for _ in x_ar:
+						while True:  
+							x = random.randint(0, x_dim)
+							y = random.randint(0, y_dim)
+							if is_box_in_box(x_ar, y_ar, w_ar, h_ar, x, y, w, h):  
+								break;
+						# while is_box_in_box(x_ar, y_ar, w_ar, h_ar, x, y, w, h): # just to make sure we don't cut backgrounds as objects (still not robust enuf)
+							# x = random.randint(0, x_dim)
+							# y = random.randint(0, y_dim)
+						
+						if sanity_check1 < 5:
+								print("x:"+str(x))
+								print("y:"+str(y))
+								sanity_check1+=1
+							# w = bb_w
+							# h = bb_h
+
+						# if c < 1:
+						if sanity_check < 10: # display purposes only
+							x_objects = cv2.imread(filename)
+							x_objects = cv2.cvtColor(x_objects, cv2.COLOR_BGR2RGB) # temporary
+							img = Image.fromarray(x_objects)
+							# img.show()
+							bckgrd = x_objects[y: y+h, x: x+w]
+							img = Image.fromarray(bckgrd)
+							# img.show()
+							sanity_check += 1
+
+						bckgrd = x_objects[y: y+h, x: x+w]
+						bckgrd = cv2.cvtColor(bckgrd, cv2.COLOR_BGR2GRAY) # temporary
+						bckgrd = cv2.resize(bckgrd, (100, 200))
+						bckgrd = np.float32(bckgrd)/255
+						bckgrd = cv2.Sobel(bckgrd, cv2.CV_32F, 0, 1, ksize=1) # temporary
+						bckgrd = bckgrd.flatten()
+							
+						if X_train_count < (upper-lower):
+							X_train[X_train_count] = bckgrd
+							Y_train[X_train_count] = '0' # background
+							X_train_count += 1
+							# print(X_train_count)
+
+				# -------------------- reset all these vars ----------------------
+				c = 0
+				x_ar = [] 
+				y_ar = []
+				w_ar = []
+				h_ar = []
+
+				filename = data[0]
+				# -------------------- reset all these vars ----------------------
+
+			else:
+				x = data[0]
+				x = math.floor(float(x))
+
+				y = data[1]
+				y = math.floor(float(y))
+
+				w = data[2]
+				w = math.floor(float(w))
+				
+				h = data[3]
+				h = math.floor(float(h))
+
+				x_ar.append(x)
+				y_ar.append(y)
+				w_ar.append(w)
+				h_ar.append(h)	
+
+				clas = data[5]
+				clas = int(clas)
+
+				x_objects = cv2.imread(filename) # image with possible multiple objects.
+				x_objects = cv2.cvtColor(x_objects, cv2.COLOR_BGR2RGB)
+				x_dim = x_objects.shape[1]
+				y_dim = x_objects.shape[0]
 
 			line = file.readline()
 	return X_train, Y_train
@@ -213,16 +440,24 @@ def train_and_predict(anchor_box, training_for):
 	for new in new_ar:
 		print(svc.predict([new]))
 
-def train_and_predict_multiclass(anchor_box, suffix, class_no, hog_windows=None): # classes to train
+def save_train_data(class_name, X, Y, suffix):
+	np.save('data/'+str(class_name)+'/'+str(class_name)+'_X_'+suffix, X)
+	np.save('data/'+str(class_name)+'/'+str(class_name)+'_Y_'+suffix, Y)
+
+def train_and_predict_multiclass(anchor_box, suffix, clss_name, clss_fn, hog_windows=None): # classes to train
 	# classes = anchor_box[anchor_box]
 
 	X_data = []
 	Y_data = []
 
 	for my_class in anchor_box:
-		a_X_data = np.load('data/'+str(my_class)+'/'+str(my_class)+'_X'+suffix+'.npy')
+		a_X_data = np.load('data/'+str(my_class)+'/'+str(my_class)+'_X_'+suffix+'.npy')
 		X_data.append(a_X_data)
-		a_Y_data = np.load('data/'+str(my_class)+'/'+str(my_class)+'_Y'+suffix+'.npy')
+		a_X_data = np.load('data/'+str(my_class)+'/'+str(my_class)+'_X_'+suffix+'_back.npy')
+		X_data.append(a_X_data)
+		a_Y_data = np.load('data/'+str(my_class)+'/'+str(my_class)+'_Y_'+suffix+'.npy')
+		Y_data.append(a_Y_data)
+		a_Y_data = np.load('data/'+str(my_class)+'/'+str(my_class)+'_Y_'+suffix+'_back.npy')
 		Y_data.append(a_Y_data)
 
 	X_data = np.concatenate(([a_X_data for a_X_data in X_data]))
@@ -248,131 +483,49 @@ def train_and_predict_multiclass(anchor_box, suffix, class_no, hog_windows=None)
 		return preds
 
 	else:
-		X_test, X_throw_away = construct_dataset(0, 30, class_no)
-		print(X_test[0].shape)
-		print(X_test[0][1000])
-		print(X_test[0][100])
-		print(X_test[0][10530])
-		print(X_test[15].shape)
-		print(X_test[15][1000])
-		print(X_test[15][1043])
-		print(X_test[15][120])
-		print(X_test[29].shape)
-		print(X_test[29][1000])
-		print(X_test[29][1340])
-		print(X_test[29][14])
+		X_test = []
+		amt = 50
+		switched = switch_name_to_num(clss_name)
+		X_objs, _ = construct_dataset_no_back(0, amt, switched, clss_fn)
+		X_test.append(X_objs)
+		X_backs, _ = construct_dataset_bckgrd(0, amt, 50, 50, clss_fn)
+		X_test.append(X_backs)
+
+		X_test_objs_back = np.concatenate(([a_X_data for a_X_data in X_test]))
+
+		# print("X_test[]:")
+		# print(len(X_test))
 
 		i = 1
-		for new in X_test:
-			print("no. "+str(i))
-			print("\n")
+		for test in X_test_objs_back:
+			# print("test[0]")
+			# print(test[0])
+			print("no. "+str(i)+": "+str(int(svc.predict([test]))))
+			# print("\n")
 			i+=1
-			print(int(svc.predict([new])[0]))
-			preds.append(int(svc.predict([new])[0]))
-			gts.append(int(class_no))
+			preds.append(int(svc.predict([test])[0]))
+			gts.append(int(switched))
 
 		print(classification_report(preds, gts))
 
-def save_train_data(class_name, X, Y, suffix):
-	np.save('data/'+str(class_name)+'/'+str(class_name)+'_X'+suffix, X)
-	np.save('data/'+str(class_name)+'/'+str(class_name)+'_Y'+suffix, Y)
+def switch_name_to_num(name):
+	return switcher.get(name, 'invalid_name')
+
+def create_xy_and_save(amt, fn, clss_name):
+	switched = switch_name_to_num(clss_name)
+	X, Y = construct_dataset_no_back(0, amt, switched, fn)
+	save_train_data(clss_name, X, Y, str(amt))
+	X, Y = construct_dataset_bckgrd(0, amt, 50, 50, fn)
+	save_train_data(clss_name, X, Y, str(amt)+'_back')
+
+def create_xy():
+	pass
 
 if __name__ == "__main__":
-	# ---------------------------------------------------------------------------
-	X, Y = construct_dataset(0, 200, "1")
-	# # print(X[0])
-	# # print(X[99])
-	# # print(X[199])
-	save_train_data('person', X, Y, '200_with_backgrd')
 
-	# X, Y = construct_dataset(0, 200, "43")
-	# # print(X[0])
-	# # print(X[99])
-	# # print(X[199])
-	# save_train_data('tennis racket', X, Y, '200_with_backgrd')
+	create_xy_and_save(100, 'data/images_annos_0_299_brocoli.txt', 'brocoli')
+	create_xy_and_save(100, 'data/images_annos_0_299_tennis racket.txt', 'tennis racket')
+	create_xy_and_save(100, 'data/images_annos_0_299_hotdog.txt', 'hotdog')
+	create_xy_and_save(100, 'data/images_annos_0_299_cup.txt', 'cup')
 
-	# X, Y = construct_dataset(0, 200, "2")
-	# # print(X[0])
-	# # print(X[99])
-	# # print(X[199])
-	# save_train_data('bicycle', X, Y, '200_with_backgrd')
-
-	# train_and_predict_multiclass(['orange', 'tennis racket', 'bicycle', 'apple'], '200')
-	# train_and_predict_multiclass(['apple', 'carrot', 'tvmonitor', 'sofa'], '200')
-	# train_and_predict_multiclass(['bicycle', 'orange', 'car', 'cake'], '200')
-	# train_and_predict_multiclass(['aeroplane', 'person', 'motorbike', 'umbrella'], '200')
-	# train_and_predict_multiclass(['tennis racket', 'sofa', 'bus', 'train'], '200', '7')
-	# ---------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# -----------------------------------------------------------------------
-# 	iris = datasets.load_iris()
-# 	X = iris.data[:, :2]
-# 	Y = iris.target
-
-# 	C = 1.0
-# 	models = (svm.SVC(kernel='linear', C=C),
-# 			  svm.LinearSVC(C=C, max_iter=10000),
-# 			  svm.SVC(kernel='rbf', gamma=0.7, C=C),
-# 			  svm.SVC(kernel='poly', degree=3, gamma='auto', C=C))
-# 	models = (clf.fit(X, Y) for clf in models)
-
-# 	titles = ('aaa',
-# 			  'bbb',
-# 			  'ccc',
-# 			  'ddd')
-
-# 	fig, sub = plt.subplots(2, 2)
-# 	plt.subplots_adjust(wspace=0.4, hspace=0.4)
-
-# 	X0, X1 = X[:, 0], X[:, 1]
-# 	xx, yy = make_meshgrid(X0, X1)
-
-# 	for clf, title, ax in zip(models, titles, sub.flatten()):
-# 		plot_contours(ax, clf, xx, yy, cmap=plt.cm.coolwarm, alpha=0.8)
-# 		ax.scatter(X0, X1, c=Y, cmap=plt.cm.coolwarm, s=20, edgecolors='k')
-# 		ax.set_xlim(xx.min(), xx.max())
-# 		ax.set_ylim(yy.min(), yy.max())
-# 		ax.set_xlabel('Sepal length')
-# 		ax.set_ylabel('Sepal width')
-# 		ax.set_xticks(())
-# 		ax.set_yticks(())
-# 		ax.set_title(title)
-
-# plt.show()
-# -------------------------------------------------------------------------
+	train_and_predict_multiclass(["cup", "hotdog", "tennis racket", "brocoli"], "100", 'tennis racket', "data/images_annos_0_49_tennis racket.txt") # trains on 300, tests with 50

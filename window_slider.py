@@ -6,6 +6,25 @@ import matplotlib.image as mpimg
 from PIL import Image
 from hog_svm import train_and_predict_multiclass
 
+def num_to_class(case):
+    switcher = {
+        '1': 'prn',
+        '2': 'bcy',
+        '3': 'car',
+        '4': 'mtrb',
+        '5': 'arpl',
+        '6': 'bus',
+       	'7': 'trn',
+       	'43': 'tns',
+       	'55': 'org',
+       	'53': 'apl',
+       	'58': 'hdg',
+       	'57': 'crt',
+       	'62': 'chr',
+       	'42': 'srf',
+    }
+    return switcher.get(case, "invalid")
+
 def slide_windows(filename, anchor_box, stride=1):
 	# ------------------------------------
 	# params:
@@ -117,53 +136,72 @@ def draw_bboxes(anchor_box, window_preds, orignal_img, hori_win_amount, vert_win
 	original = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
 
 	print(bbox_coords)
-	
+
 	for bbox in bbox_coords:
 		cv2.line(original,(bbox[0],bbox[1]), (bbox[0]+bbox[2], bbox[1]), pink, 1)
 		cv2.line(original,(bbox[0]+bbox[2], bbox[1]), (bbox[0]+bbox[2], bbox[1]+bbox[3]), pink, 1)
 		cv2.line(original,(bbox[0]+bbox[2], bbox[1]+bbox[3]), (bbox[0], bbox[1]+bbox[3]), pink, 1)
 		cv2.line(original,(bbox[0], bbox[1]+bbox[3]), (bbox[0], bbox[1]), pink, 1)
-		font = cv2.FONT_HERSHEY_SIMPLEX
-		cv2.putText(original, str(bbox[4]), (bbox[0],bbox[1]+25), font, 1, pink, 2, cv2.LINE_AA)
-		# points = np.array([[[50, 50], [100, 50], [100, 100], [50, 100]]], np.int32)
-				# points = np.array([[[bbox[0], bbox[1]], \
-				# 		    [bbox[0]+bbox[2], bbox[1]], \
-				# 		    [bbox[0]+bbox[2], bbox[1]+bbox[3]],\
-				# 		    [bbox[0], bbox[3]+bbox[3]]]], np.int32)
-	# points = np.array([[[bbox_coords[2][0], bbox_coords[2][1]], \
-	# 					[bbox_coords[2][0]+bbox_coords[2][2], bbox_coords[2][1]], \
-	# 					[bbox_coords[2][0]+bbox_coords[2][2], bbox_coords[2][1]+bbox_coords[2][3]], \
-	# 					[bbox_coords[2][0], bbox_coords[2][3]+bbox_coords[2][3]]]], np.int32)
-	# # points = np.array([[[0, 0], [0, 0], [0, 0], [0, 0]]], np.int32)
-	# # cv2.polylines(original, [points], True, pink, thickness=1)
-	# points = np.array([[[bbox_coords[4][0], bbox_coords[4][1]], \
-	# 					[bbox_coords[4][0]+bbox_coords[4][2], bbox_coords[4][1]], \
-	# 					[bbox_coords[4][0]+bbox_coords[4][2], bbox_coords[4][1]+bbox_coords[4][3]], \
-	# 					[bbox_coords[4][0], bbox_coords[4][3]+bbox_coords[4][3]]]], np.int32)
-	# cv2.polylines(original, [points], True, pink, thickness=1)
-	# # points = np.array([[[0, 0], [0, 0], [0, 0], [0, 0]]], np.int32)
-	# # cv2.polylines(original, [points], True, pink, thickness=1)
-	# points = np.array([[[bbox_coords[1][0], bbox_coords[1][1]], \
-	# 					[bbox_coords[2][0]+bbox_coords[2][2], bbox_coords[2][1]], \
-	# 					[bbox_coords[2][0]+bbox_coords[2][2], bbox_coords[2][1]+bbox_coords[2][3]], \
-	# 					[bbox_coords[2][0], bbox_coords[2][3]+bbox_coords[2][3]]]], np.int32)
-	# cv2.polylines(original, [points], True, pink, thickness=1)
-	
+		font = cv2.FONT_HERSHEY_COMPLEX_SMALL
+		clss = num_to_class(str(bbox[4]))
+		cv2.putText(original, clss, (bbox[0],bbox[1]+25), font, 1, pink, 2, cv2.LINE_AA)
+
 	plt.axis("off")
 	plt.imshow(original)
 	plt.show()
 	# cv2.imshow("lekka", original)
 
 if __name__ == "__main__":
-	filename = "/home/charlie/Desktop/yolo/yolo-v3/data/coco/cocoapi/coco/images/train2017/train2017/000000323639.jpg"
+	# filename = "/home/charlie/Desktop/yolo/yolo-v3/data/coco/cocoapi/coco/images/train2017/train2017/000000323639.jpg"
+	# filename = "got_chairs.jpg"
+	# anchor_box = []
+	# anchor_box.append(50) # w
+	# anchor_box.append(50) # h
+
+	# hog_windows, hori_win_steps, vert_win_steps = slide_windows(filename, anchor_box, 2)
+
+	# # preds = train_and_predict_multiclass(['orange', 'tennis racket', 'bicycle', 'person'], '200_with_backgrd', '7', hog_windows)
+	# preds = train_and_predict_multiclass(['chair'], '1500', '0', hog_windows)
+
+	# print(preds)
+
+	# draw_bboxes(anchor_box, preds, filename, hori_win_steps, vert_win_steps)
+
+
+	# filename = "got_carrots.jpg"
+	# anchor_box = []
+	# anchor_box.append(50) # w
+	# anchor_box.append(50) # h
+
+	# hog_windows, hori_win_steps, vert_win_steps = slide_windows(filename, anchor_box, 2)
+
+	# # preds = train_and_predict_multiclass(['orange', 'tennis racket', 'bicycle', 'person'], '200_with_backgrd', '7', hog_windows)
+	# preds = train_and_predict_multiclass(['carrot'], '1500', '0', hog_windows)
+
+	# print(preds)
+
+	# draw_bboxes(anchor_box, preds, filename, hori_win_steps, vert_win_steps)
+
+	# filenames.append("got_surfboards.jpg")
+	filenames = ["6.jpg", "26.jpg", "30.jpg", "got_carrots.jpg", "got_chairs.jpg", "got_surfboards.jpg", "got_surfboards1.jpg", "got_surfboards2.jpg"]
+	# filenames.append("got_surfboards1.jpg")
+	# filenames.append("got_chairs1.jpg")
+	# filenames.append("got_chairs7.jpg")
+	# filenames.append("got_chairs6.jpg")
+	# filenames.append("got_chairs5.jpg")
+	# filenames.append("got_surfboards2.jpg")
+	# filenames.append("got_chairs2.jpg")
+	# filenames.append("got_surfboards3.jpg")
+	# filenames.append("got_chairs3.jpg")
+	# filenames.append("got_surfboards4.jpg")
+	# filenames.append("got_chairs4.jpg")
 	anchor_box = []
 	anchor_box.append(50) # w
 	anchor_box.append(50) # h
 
-	hog_windows, hori_win_steps, vert_win_steps = slide_windows(filename, anchor_box, 2)
-
-	preds = train_and_predict_multiclass(['orange', 'tennis racket', 'bicycle', 'person'], '200_with_backgrd', '7', hog_windows)
-
-	print(preds)
-
-	draw_bboxes(anchor_box, preds, filename, hori_win_steps, vert_win_steps)
+	for filename in filenames:
+		hog_windows, hori_win_steps, vert_win_steps = slide_windows(filename, anchor_box, 2)
+		# preds = train_and_predict_multiclass(['orange', 'tennis racket', 'bicycle', 'person'], '200_with_backgrd', '7', hog_windows)
+		preds = train_and_predict_multiclass(['chair', 'surfboard', 'carrot'], '300', '0', hog_windows)
+		# print(preds)
+		draw_bboxes(anchor_box, preds, filename, hori_win_steps, vert_win_steps)
